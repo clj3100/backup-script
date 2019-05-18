@@ -29,7 +29,7 @@ filename="$jail@$(date +%Y%m%d).gz"
 #echo $filename
 
 #Adding line to backup log
-echo $(date "+%b %d %H:%M:%S") $(hostname -s) backup: Starting backup of $jail >> $backup_log
+echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Starting backup of $jail #>> $backup_log
 
 #Creating the snapshot
 #zfs snapshot $snapname
@@ -42,10 +42,14 @@ echo $(date "+%b %d %H:%M:%S") $(hostname -s) backup: Starting backup of $jail >
 
 if [[ $filesize -gt 3500000000 ]]
     then
-	#Multipart Upload
+	#Multipart Upload TEMP FOR NOW
 	echo -n
 else
 	#Uploading to Glacier
 	#$result=$(jexec $(jid $back_jail) aws glacier upload-archive --account-id - --vault-name $vaultname --body $jail_back_loc/$filename --archive-description $jailpath)
 	echo -n
 fi
+
+archiveId=$(echo $result | jq -r .archiveId)
+
+echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Finished backup of $jail as $archiveId #>> $backup_log
