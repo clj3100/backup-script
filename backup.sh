@@ -29,7 +29,17 @@ filename="$jail@$(date +%Y%m%d).gz"
 #echo $filename
 
 #Adding line to backup log
-echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Starting backup of $jail #>> $backup_log
+#echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Starting backup of $jail #>> $backup_log
+
+#Checking for old backups to prune
+pruned=$(find $back_loc -maxdepth 1 -name "$jail*" -mtime +30 -print -type f | sed "s:$back_loc/::" | tr "\n" " ")
+if [[ $(test -z "$pruned" ;echo $?) -eq 0 ]];
+    then
+	echo $(date '+%b %d %H:%M:%S') $(hostname -s) prune: Nothing to prune #>> $backup_log
+else
+	echo $(date '+%b %d %H:%M:%S') $(hostname -s) prune: Pruned $pruned #>> $backup_log
+fi
+#-exec rm {} \;
 
 #Creating the snapshot
 #zfs snapshot $snapname
@@ -52,4 +62,4 @@ fi
 
 archiveId=$(echo $result | jq -r .archiveId)
 
-echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Finished backup of $jail as $archiveId #>> $backup_log
+#echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Finished backup of $jail as $archiveId #>> $backup_log
