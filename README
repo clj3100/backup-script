@@ -1,0 +1,8 @@
+FreeBSD jail backup script
+
+Backs up to local directory and to AWS glacier
+
+Requires a jail that has aws-cli installed and configured
+also needs the backup location in fstab on the jail in desired location
+
+All configuration is in the top of the backup.sh script
