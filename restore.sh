@@ -11,6 +11,20 @@ back_loc=/mnt/Backup/jails
 
 uselocal=0
 
+#Defining function for getting the jail ID
+function jid {
+
+jls | grep "$1" | awk '{print $1}'
+
+}
+
+#Defining a function to get the zfs path of the jail
+function jpath {
+
+zfs list | grep "$1" | grep /root |awk '{print $1}'
+
+}
+
 c=1
 jailarray=()
 jaillist=$(grep saved /var/log/backup.log | cut -d" " -f10 | sort | uniq)
@@ -18,6 +32,15 @@ for j in $jaillist
     do
 	jailarray+=($c)
 	jailarray+=(" $j ")
+	c=$(($c+1))
+done
+
+c=1
+curjaillist=$(jls | grep -v JID | awk '{print $2}')
+for j in $curjaillist
+    do
+	curjailarray+=($c)
+	curjailarray+=(" $j ")
 	c=$(($c+1))
 done
 
@@ -51,13 +74,22 @@ fi
 if [[ $uselocal -eq 0 ]]
     then
 	archiveId=$(grep saved /var/log/backup.log | grep $jail | grep "$dateconvert" | cut -d" " -f13)
-	if [ (-z "$archiveid") ]
+	if [[ (-z "$archiveid") ]]
 	    then
 		echo "That backup date for that jail does not exist"
 		exit 1
 	else
+		echo $archiveId
 		exit 0
 	fi
-	echo $archiveId
-else
 	
+else
+	restorechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select how to restore jail" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${RESTOREOPT[@]}" 2>&1 >/dev/tty)
+	if [[ $restorechoice -eq 1 ]]
+	    then
+		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
+	else
+		echo -n
+		exit 0
+	fi
+fi
