@@ -9,7 +9,7 @@ BACKTITLE="Restore Script"
 
 back_loc=/mnt/Backup/jails
 
-uselocal=0
+uselocal=1
 
 #Defining function for getting the jail ID
 function jid {
@@ -59,24 +59,21 @@ echo $dateconvert
 localpath=$(if [[ $(test -f $back_loc/$jail@$datechoice.gz ;echo $?) -eq 0 ]];then echo $back_loc/$jail@$datechoice.gz;else echo -n;fi)
 if [[ (-z "$localpath") ]]
     then
-	read -r -p "The backup is local, would you like to use that? Y/N" localchoice
-else
 	echo -n
-fi
-
-if [[ "$localchoice" =~ ^([yY][eE][sS]|[yY])+$ ]]
-    then
-        uselocal=1
 else
-        echo -n
+	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 fi
 
-if [[ $uselocal -eq 0 ]]
+if [[ $localchoice -eq 1 ]]
     then
 	archiveId=$(grep saved /var/log/backup.log | grep $jail | grep "$dateconvert" | cut -d" " -f13)
 	if [[ (-z "$archiveid") ]]
 	    then
-		echo "That backup date for that jail does not exist"
+		inventorychoice=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS Inventory Job" --yesno "Would you like to run an AWS Inventory retrieval?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		if [[ $inventorychoice -eq 0 ]]
+		    then
+			
+		#echo "That backup date for that jail does not exist in the logs"
 		exit 1
 	else
 		echo $archiveId
@@ -89,7 +86,7 @@ else
 	    then
 		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
 	else
-		echo -n
+		echo "After restore section"
 		exit 0
 	fi
 fi
