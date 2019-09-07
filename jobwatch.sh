@@ -13,17 +13,18 @@ jls | grep "$1" | awk '{print $1}'
 
 }
 
-backupjid=$(jid $backupjail}
+backupjid=$(jid $backupjail)
 
 while true
     do
-	#jobs=${jexec $backupjid aws glacier list-jobs --account-id - --vault-name $vault}
-	jobs=${cat joblist.txt}
-	status=${echo "$jobs" | jq ".JobList|.[]|if .JobId=='$jobid' then .Completed else empty end"}
-	if [ $status == true ]
+	jobs=$(jexec $backupjid aws glacier list-jobs --account-id - --vault-name $vault)
+	status=$(echo "$jobs" | jq -r ".JobList|.[]|if .JobId==\"$jobid\" then .Completed else empty end")
+	if [ "$status" == "true" ]
 	    then
+		#echo JOB DONE
 		exit 0
 	else
-		sleep 60
+		#echo JOB NOT DONE
+		sleep 900
 	fi
 done
