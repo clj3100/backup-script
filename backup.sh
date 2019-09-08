@@ -115,7 +115,7 @@ archiveId=$(echo $result | jq -r .archiveId)
 echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Finished backup of jail $jail saved to $archiveId >> $backup_log
 
 #Checking for old backups to prune
-pruned=$(find $back_loc -maxdepth 1 -name "$jail*" -mtime +$prunedays -print -type f -exec rm {} \; | sed "s:$back_loc/::" | tr "\n" " ")
+pruned=$(find $back_loc -maxdepth 1 -name "$jail*.gz" -mtime +$prunedays -print -type f -exec rm {} \; | sed "s:$back_loc/::" | tr "\n" " ")
 if [[ $(test -z "$pruned" ;echo $?) -eq 0 ]];
     then
         echo $(date '+%b %d %H:%M:%S') $(hostname -s) prune: Nothing to prune >> $backup_log
