@@ -18,6 +18,13 @@ jls | grep "$1" | awk '{print $1}'
 
 }
 
+function inarray {
+  local e match="$1"
+  shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}
+
 backjid=$(jid $backup_jail)
 
 #Generating the days to keep so everything else is removed
@@ -38,7 +45,7 @@ inv=$(find $backup_loc -name 'inv*.json' -mtime -30d)
 #Testing if above variable is empty and if it is then starting a job for new inventory
 if [[ (-z "$inv") ]]
     then
-	invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name backup-cjonesflix --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
+	invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vault --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
 	#Watching for above job completion then continuing script
 	while true
 	    do
@@ -56,8 +63,30 @@ if [[ (-z "$inv") ]]
 fi
 #This means the inventory is recent so it needs to continue the prune
 
-#asking for inventory job but different idea for script makes this not used
-#if [[ $(test -e $backup_loc/inventory.txt) -eq 1 ]]
-#    then
-#	invjob=$(dialog --clear --backtitle "$BACKTITLE" --title "Inventory Job" --yesno "There is no stored inventory file. Do you want to start the inventory retrieval job?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
-#fi
+#Generating a parsable list of all archives
+archives=$(cat $inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
+
+#setting newline to for delimiter
+IFS=$'\n'
+for i in $archives
+    do
+	adate=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" $(echo $i | cut -f2) "+%m/%d")
+	adatesec=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" $(echo $i | cut -f2) "+%s")
+	cursec=$(date -v -90d +%s)
+	aid=$(echo $i | cut -f1)
+	if [[ $(inarray "$adate" "${dates[@]}" ;echo $?) -eq 1 ]]
+	    then
+		#Backup is not in the last day of any month
+		if [[ "$adatesec" -lt "$cursec" ]]
+		    then
+			#Here it is not the last day of the month and not within the 90 day period
+			jexec $backjid aws glacier delete-archive --account-id - --vault-name $vault --archive-id="$aid"
+			#echo $i
+		else
+			echo -n
+		fi
+	else
+		echo -n
+	fi
+done
+
