@@ -10,6 +10,20 @@ hash_loc=$back_loc/hash
 partsize="128M"
 prunedays=30
 
+if [[ $(test -e back.conf;echo $?) -ne 0 ]]
+    then
+	echo "back.conf does not exist"
+	exit 1
+fi
+
+
+#If arguments are empty then show usage and exit
+if [[ (-z $*) ]]
+    then
+	echo -e "Script to backup freebsd jails to a local directory and S3 Galcier\nConfig directory: \nUsage: backup <jail>"
+	exit 1
+fi
+
 #Defining a debug step by step function
 function verify {
 
