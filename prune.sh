@@ -7,16 +7,9 @@
 #Script checks for recent inventory job just incase there was one manually run from the restore script (just in case)
 #If inventory is older than 30 days then call new inventory job and wait for it to finish
 
-vault=backup-cjonesflix
-backup_jail=Backup
-backup_loc=/mnt/Backup/jails
-
-#Defining function for getting the jail ID
-function jid {
-
-jls | grep "$1" | awk '{print $1}'
-
-}
+#Defining conf file and setting variables from it
+conf=/usr/local/etc/back.conf
+source $conf
 
 function inarray {
   local e match="$1"
@@ -25,7 +18,7 @@ function inarray {
   return 1
 }
 
-backjid=$(jid $backup_jail)
+backjid=$(jid $back_jail)
 
 #Generating the days to keep so everything else is removed
 
@@ -40,20 +33,23 @@ done
 
 #Checking for any inventory files that are newer than 30 days
 
-inv=$(find $backup_loc -name 'inv*.json' -mtime -30d)
+inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
 
 #Testing if above variable is empty and if it is then starting a job for new inventory
 if [[ (-z "$inv") ]]
     then
-	invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vault --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
+	invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
 	#Watching for above job completion then continuing script
 	while true
 	    do
-	        jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vault)
+	        jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
 	        status=$(echo "$jobs" | jq -r ".JobList|.[]|if .JobId==\"$jobid\" then .Completed else empty end")
 	        if [ "$status" == "true" ]
 	            then
 	                #echo JOB DONE
+			#saving completed job to file
+			inv="inv$(date +%m%d%y).json"
+			out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$invjob" $jail_back_loc/$inv)
 	                break
 	        else
 	                #echo JOB NOT DONE
@@ -64,7 +60,7 @@ fi
 #This means the inventory is recent so it needs to continue the prune
 
 #Generating a parsable list of all archives
-archives=$(cat $inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
+archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
 
 #setting newline to for delimiter
 IFS=$'\n'
@@ -80,7 +76,7 @@ for i in $archives
 		if [[ "$adatesec" -lt "$cursec" ]]
 		    then
 			#Here it is not the last day of the month and not within the 90 day period
-			jexec $backjid aws glacier delete-archive --account-id - --vault-name $vault --archive-id="$aid"
+			jexec $backjid aws glacier delete-archive --account-id - --vault-name $vaultname --archive-id="$aid"
 			#echo $i
 		else
 			echo -n

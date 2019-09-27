@@ -7,23 +7,9 @@ WIDTH=40
 CHOICE_HEIGHT=10
 BACKTITLE="Restore Script"
 
-back_loc=/mnt/Backup/jails
-
-uselocal=1
-
-#Defining function for getting the jail ID
-function jid {
-
-jls | grep "$1" | awk '{print $1}'
-
-}
-
-#Defining a function to get the zfs path of the jail
-function jpath {
-
-zfs list | grep "$1" | grep /root |awk '{print $1}'
-
-}
+#Defining conf file and setting variables from it
+conf=/usr/local/etc/back.conf
+source $conf
 
 c=1
 jailarray=()
@@ -56,25 +42,29 @@ jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%b %d")
 echo $dateconvert
+localchoice=1
 localpath=$(if [[ $(test -f $back_loc/$jail@$datechoice.gz ;echo $?) -eq 0 ]];then echo $back_loc/$jail@$datechoice.gz;else echo -n;fi)
 if [[ (-z "$localpath") ]]
     then
-	echo -n
+	dialog --clear --backtitle "$BACKTITLE" --title "Local option" --infobox "There is no local copy of the file" $HEIGHT $WIDTH 2>&1 >/dev/tty
 else
-	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
 fi
-
 if [[ $localchoice -eq 1 ]]
     then
 	archiveId=$(grep saved /var/log/backup.log | grep $jail | grep "$dateconvert" | cut -d" " -f13)
 	if [[ (-z "$archiveid") ]]
 	    then
-		inventorychoice=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS Inventory Job" --yesno "Would you like to run an AWS Inventory retrieval?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		inventorychoice=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS Inventory Job" --defaultno --yesno "There is no backup with that date in logs. Would you like to run an AWS Inventory retrieval?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
 		if [[ $inventorychoice -eq 0 ]]
 		    then
-			
-		#echo "That backup date for that jail does not exist in the logs"
-		exit 1
+			startjob=$(jexec $(jid $back_jail) aws glacier initiate-job --account-id --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}')
+			jobId=$(echo $startjob | jq -r .jobId)
+			echo "$jobId" > $back_loc/inventoryjob.txt
+		else
+			echo "If you dont pick an option then there is no use for the script"
+			exit 1
+		fi
 	else
 		echo $archiveId
 		exit 0

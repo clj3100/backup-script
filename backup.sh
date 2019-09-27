@@ -1,26 +1,19 @@
 #!/bin/bash
 
-back_loc=/mnt/Backup/jails
-jail_back_loc=/backup
-jail=$1
-back_jail="Backup"
-vaultname="backup-cjonesflix"
-backup_log="/var/log/backup.log"
-hash_loc=$back_loc/hash
-partsize="128M"
-prunedays=30
+#Defining conf file and setting variables from it
+conf=/usr/local/etc/back.conf
+source $conf
 
-if [[ $(test -e back.conf;echo $?) -ne 0 ]]
+if [[ $(test -e $conf;echo $?) -ne 0 ]]
     then
-	echo "back.conf does not exist"
+	echo "Configuration file does not exist!\nRun init script to create config file"
 	exit 1
 fi
-
 
 #If arguments are empty then show usage and exit
 if [[ (-z $*) ]]
     then
-	echo -e "Script to backup freebsd jails to a local directory and S3 Galcier\nConfig directory: \nUsage: backup <jail>"
+	echo -e "Script to backup freebsd jails to a local directory and S3 Galcier\n Config file: $conf\nUsage: backup <jail>"
 	exit 1
 fi
 
@@ -36,20 +29,7 @@ else
 fi
 }
 
-#Defining function for getting the jail ID
-function jid {
-
-jls | grep "$1" | awk '{print $1}'
-
-}
-
-#Defining a function to get the zfs path of the jail
-function jpath {
-
-zfs list | grep "$1" | grep /root |awk '{print $1}'
-
-}
-
+jail=$1
 jailpath=$(jpath $jail)
 snapname="$jailpath@backup_$jail"
 filename="$jail@$(date +%Y%m%d).gz"
@@ -103,22 +83,22 @@ if [[ $filesize -gt 3500000000 ]]
 			byteStart=$((i*partsize))
 			byteEnd=$(($filesize-1))
 			file=$(echo $f | sed 's:.*/::')
-			checksum=$(jexec $(jid $back_jail) aws glacier upload-multipart-part --body $jail_back_loc/$tmpd/$file --range "bytes $byteStart-$byteEnd/*" --account-id - --vault-name $vaultname --upload-id $uploadid)
+			checksum=$(jexec $(jid $back_jail) aws glacier upload-multipart-part --body $jail_back_loc/$tmpd/$file --range "bytes $byteStart-$byteEnd/*" --account-id - --vault-name $vaultname --upload-id="$uploadid")
 		else
 			byteStart=$((i*partsize))
 			byteEnd=$((i*partsize+partsize-1))
 			#Getting filename for part
 			file=$(echo $f | sed 's:.*/::')
-			checksum=$(jexec $(jid $back_jail) aws glacier upload-multipart-part --body $jail_back_loc/$tmpd/$file --range "bytes $byteStart-$byteEnd/*" --account-id - --vault-name $vaultname --upload-id $uploadid)
+			checksum=$(jexec $(jid $back_jail) aws glacier upload-multipart-part --body $jail_back_loc/$tmpd/$file --range "bytes $byteStart-$byteEnd/*" --account-id - --vault-name $vaultname --upload-id="$uploadid")
 			i=$(($i+1))
 		fi
 	done
 	#Finishing upload
-	result=$(jexec $(jid $back_jail) aws glacier complete-multipart-upload --account-id - --vault-name $vaultname --archive-size $filesize --checksum $hash --upload-id $uploadid)
+	result=$(jexec $(jid $back_jail) aws glacier complete-multipart-upload --account-id - --vault-name $vaultname --archive-size $filesize --checksum $hash --upload-id="$uploadid")
 	rm -rf $tmppath
 
 else
-	#Uploading to Glacier
+	#Uploading to Glacier normally
 	echo $(date '+%b %d %H:%M:%S') $(hostname -s) backup: Uploading to Glacier >> $backup_log
 	result=$(jexec $(jid $back_jail) aws glacier upload-archive --account-id - --vault-name $vaultname --body $jail_back_loc/$filename --archive-description $jailpath --checksum $hash)
 	#echo -n
