@@ -78,7 +78,15 @@ else
 	elif [[ $restorechoice -eq 2 ]]
 		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
-		iocage create -r LATEST -n $newjailname 
+		iocage create -r LATEST -n $newjailname ip4_addr=$newjailip boot=on vnet=on default_route=10.10.0.1
+		#Getting new jail zfs path to destroy and replace with backup
+		newjailpath=$(jpath $newjailname)
+		zfs destroy $newjailpath
+		#Placeholder for the extracting of local jail backup from $localpath
+
+	elif [[ $restorechoice -eq 3 ]]
+		#Section for temporary mount jail 
+		#Placeholder for extracting to temp zfa location
 		echo "After restore section"
 		exit 0
 	fi
