@@ -25,6 +25,9 @@ done
 #Asking for backup jail creation
 createbackjail=$(dialog --clear --backtitle "$BACKTITLE" --title "Create backup jail" --yesno "Do you want this script to create the backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
 
-if [[ $checkiocage -eq 0 ]]
+if [[ $createbackjail -eq 0 ]]
     then
-	
+	ip=$(dialog --clear --backtitle "$BACKTITLE" --title "IP for backup jail" --inputbox "What IP address for backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+	if [[ $checkiocage -eq 0 ]]
+	    then
+		iocage create -r LATEST -n Backup ip4_addr=$ip
