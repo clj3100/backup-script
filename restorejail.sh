@@ -75,7 +75,10 @@ else
 	if [[ $restorechoice -eq 1 ]]
 	    then
 		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
-	else
+	elif [[ $restorechoice -eq 2 ]]
+		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		iocage create -r LATEST -n $newjailname 
 		echo "After restore section"
 		exit 0
 	fi
