@@ -12,14 +12,14 @@ conf=/usr/local/etc/back.conf
 source $conf
 
 c=1
-jailarray=()
-jaillist=$(grep saved /var/log/backup.log | cut -d" " -f10 | sort | uniq)
-for j in $jaillist
-    do
-	jailarray+=($c)
-	jailarray+=(" $j ")
-	c=$(($c+1))
-done
+#jailarray=()
+#jaillist=$(grep saved /var/log/backup.log | cut -d" " -f10 | sort | uniq)
+#for j in $jaillist
+#    do
+#	jailarray+=($c)
+#	jailarray+=(" $j ")
+#	c=$(($c+1))
+#done
 
 c=1
 curjaillist=$(jls | grep -v JID | awk '{print $2}')
@@ -38,6 +38,12 @@ jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to res
 
 jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 
+
+#Moving script to new inventory job availability checking
+#relying on backup.log is not a good idea since it could get rolled over and thats just more work
+inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
+
+archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
 
 datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%b %d")
