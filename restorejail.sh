@@ -12,16 +12,6 @@ conf=/usr/local/etc/back.conf
 source $conf
 
 c=1
-#jailarray=()
-#jaillist=$(grep saved /var/log/backup.log | cut -d" " -f10 | sort | uniq)
-#for j in $jaillist
-#    do
-#	jailarray+=($c)
-#	jailarray+=(" $j ")
-#	c=$(($c+1))
-#done
-
-c=1
 curjaillist=$(jls | grep -v JID | awk '{print $2}')
 for j in $curjaillist
     do
@@ -34,16 +24,26 @@ RESTOREOPT=(	1 "Replace Jail"
 		2 "New Jail"
 		3 "Mount Temporarily")
 
-jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to restore" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${jailarray[@]}" 2>&1 >/dev/tty)
-
-jail=$(echo $jaillist | cut -d " " -f$jailchoice)
-
-
 #Moving script to new inventory job availability checking
 #relying on backup.log is not a good idea since it could get rolled over and thats just more work
 inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
 
 archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
+
+if [[ (-z $inv) ]]
+    then
+	echo "Please run the prune script in a detached console to get a recent inventory job"
+	exit 1
+fi
+
+#Using recent inventory job to generate available jails
+jaillist=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveDescription" | cut -d/ -f4 | sort | uniq | grep -v "jails\|^@")
+
+
+#Asking for what jail to restore
+jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to restore" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${jailarray[@]}" 2>&1 >/dev/tty)
+
+jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 
 datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%b %d")
