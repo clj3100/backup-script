@@ -34,16 +34,29 @@ createbackjail=$(dialog --clear --backtitle "$BACKTITLE" --title "Create backup 
 if [[ $createbackjail -eq 0 ]]
     then
 	ip=$(dialog --clear --backtitle "$BACKTITLE" --title "IP for backup jail" --inputbox "What IP address for backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+	defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Default route for backup jail" --inputbox "What is the defalt route for the backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 	if [[ $checkiocage -eq 0 ]]
 	    then
-		iocage create -r LATEST -n Backup ip4_addr=$ip boot=on vnet=on
+		iocage create -r LATEST -n Backup ip4_addr=$ip boot=on vnet=on defaultrouter=$defroute
 		backjid=$(jid Backup)
-		#Need to run the command to install pkg in new jail cause recent new jails do not have it by default
-		jexec $backjid pkg -y install awscli ruby25-gems 
+		#Installing nessecary packages in the jail
+		jexec $backjid setenv ASSUME_ALWAYS_YES yes ; pkg ; pkg install awscli ruby25-gems
 		jexec $backjid gem install treehash
-		awsid=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS CLI config" --inputbox "Enter your aws access id" $HEIGHT $WIDTH 2>&1 >/dev/tty)
-		awssecret=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS CLI config" --inputbox "Enter your aws access secret" $HEIGHT $IWDTH 2>&1 >/dev/tty)
-		
+		awsid=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS CLI config" --inputbox "Enter your aws access key" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		awssecret=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS CLI config" --inputbox "Enter your aws secret access key" $HEIGHT $IWDTH 2>&1 >/dev/tty)
+		regionarray=()
+		regionlist=$(jexec $backjid aws ec2 describe-regions | jq -r ".|.[]|.[] .RegionName")
+		count=1
+		for reg in $regionlist
+		    do
+			regionarray+=($count)
+			regionarray+=("$reg")
+			count=$(($count+1))
+		done		
+		regionchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select default region" --menu "Options:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${regionarray[@]}" 2>&1 >/dev/tty)
+		region=$(($regionchoice*2-1))
+		jexec $backjid mkdir /root/.aws ;printf "[default]\naws_access_key_id = $awsid\naws_secret_access_key = $awssecret" >/root/.aws/credentials
+		jexec $backjid printf "[default]\nregion = $region" > /root/.aws/config
 	elif [[ $checkwarden -eq 0 ]]
 	    then
 		#Need to create the warden jail creation section
