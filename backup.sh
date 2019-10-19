@@ -1,13 +1,14 @@
 #!/bin/bash
 
 #Defining conf file and setting variables from it
-conf=/usr/local/etc/back.conf
-source $conf
+conf=/root/back.conf
 
 if [[ $(test -e $conf;echo $?) -ne 0 ]]
     then
-	echo "Configuration file does not exist!\nRun init script to create config file"
+	prinf "Configuration file does not exist!\nRun init script to create config file"
 	exit 1
+else
+	source $conf
 fi
 
 #If arguments are empty then show usage and exit

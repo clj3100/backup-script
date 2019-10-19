@@ -9,7 +9,15 @@
 
 #Defining conf file and setting variables from it
 conf=/usr/local/etc/back.conf
-source $conf
+
+if [[ $(test -e $conf;echo $?) -ne 0 ]]
+    then
+        printf "Configuration file does not exist!\nRun init script to create config file"
+        exit 1
+else
+        source $conf
+fi
+
 
 function inarray {
   local e match="$1"
