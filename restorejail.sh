@@ -8,7 +8,7 @@ CHOICE_HEIGHT=10
 BACKTITLE="Restore Script"
 
 #Defining conf file and setting variables from it
-conf=/usr/local/etc/back.conf
+conf=/root/back.conf
 source $conf
 
 c=1

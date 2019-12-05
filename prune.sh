@@ -8,7 +8,7 @@
 #If inventory is older than 30 days then call new inventory job and wait for it to finish
 
 #Defining conf file and setting variables from it
-conf=/usr/local/etc/back.conf
+conf=/root/back.conf
 
 if [[ $(test -e $conf;echo $?) -ne 0 ]]
     then
