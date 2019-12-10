@@ -51,7 +51,7 @@ if [[ (-z "$inv") ]]
 	while true
 	    do
 	        jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
-	        status=$(echo "$jobs" | jq -r ".JobList|.[]|if .JobId==\"$jobid\" then .Completed else empty end")
+	        status=$(echo "$jobs" | jq --args id "$invjob" -r '.JobList|.[]|if .JobId=="$id" then .Completed else empty end')
 	        if [ "$status" == "true" ]
 	            then
 	                #echo JOB DONE
