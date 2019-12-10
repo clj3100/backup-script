@@ -46,24 +46,51 @@ inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
 #Testing if above variable is empty and if it is then starting a job for new inventory
 if [[ (-z "$inv") ]]
     then
-	invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
-	#Watching for above job completion then continuing script
-	while true
-	    do
-	        jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
-	        status=$(echo "$jobs" | jq --args id "$invjob" -r '.JobList|.[]|if .JobId=="$id" then .Completed else empty end')
-	        if [ "$status" == "true" ]
-	            then
-	                #echo JOB DONE
-			#saving completed job to file
-			inv="inv$(date +%m%d%y).json"
-			out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$invjob" $jail_back_loc/$inv)
-	                break
-	        else
-	                #echo JOB NOT DONE
-	                sleep 900
-	        fi
-	done
+	#Adding a check for any running/completed job so if the script had an error and had to be re-run
+	invjobcompleted=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname | jq -r '.JobList|.[]|if .Completed then "done" else "running" end')
+	#Saving inventory jobid and if there is no running job it will just be empty according to testing
+	invjob=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname | jq -r ".JobList|.[]|.JobId")
+	inv="inv$(date +%m%d%y).json"
+	if [[ $invjobcompleted -eq "done" ]]
+	    then
+		out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$invjob" $jail_back_loc/$inv)
+	elif [[ $invjobcompleted -eq "running" ]]
+	    then
+		while true
+                    do
+                        jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
+                        status=$(echo "$jobs" | jq --arg id "$invjob" -r '.JobList|.[]|if .JobId=="$id" then .Completed else empty end')
+                        if [ "$status" == "true" ]
+                            then
+                                #echo JOB DONE
+                                #saving completed job to file
+                                out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$invjob" $jail_back_loc/$inv)
+                                break
+                        else
+                                #echo JOB NOT DONE
+                                sleep 900
+                        fi
+                done
+	elif [[ (-z "$invjobcompleted") ]]
+	    then
+		invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
+	        #Watching for above job completion then continuing script
+	        while true
+	            do
+	                jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
+	                status=$(echo "$jobs" | jq --arg id "$invjob" -r '.JobList|.[]|if .JobId=="$id" then .Completed else empty end')
+	                if [ "$status" == "true" ]
+	                    then
+	                        #echo JOB DONE
+	                        #saving completed job to file
+	                        out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$invjob" $jail_back_loc/$inv)
+	                        break
+	                else
+	                        #echo JOB NOT DONE
+	                        sleep 900
+	                fi
+	        done
+	fi
 fi
 #This means the inventory is recent so it needs to continue the prune
 
