@@ -57,7 +57,7 @@ zfs destroy $snapname
 filesize=$(stat -f %z $back_loc/$filename)
 
 #Generating treehash
-hash=$(jexec $(jid $back_jail) treehash $jail_back_loc/$filename)
+hash=$(jexec $(jid $back_jail) treehash "$jail_back_loc/$filename")
 
 echo $hash > $hash_loc/$jail@$(date +%Y%m%d).hash
 
@@ -73,7 +73,7 @@ if [[ $filesize -gt 3500000000 ]]
 	#Making tempdir and splitting file
 	tmppath=$(TMPDIR=$back_loc mktemp -d)
 	tmpd=$(echo $tmppath | sed 's:.*/::')
-	(cd $tmppath && split -a3 -b$partsize $back_loc/$filename part)
+	(cd $tmppath && split -a3 -b$partsize "$back_loc/$filename" part)
 	filelist=$(ls $tmppath |sort)
 	#echo $tmppath
 	#Uploading parts
