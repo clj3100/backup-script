@@ -51,11 +51,14 @@ if [[ (-z "$inv") ]]
 	#Saving inventory jobid and if there is no running job it will just be empty according to testing
 	invjob=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname | jq -r ".JobList|.[]|.JobId")
 	inv="inv$(date +%m%d%y).json"
-	if [[ $invjobcompleted -eq "done" ]]
+	#echo -e "inv file: "$inv"\n"
+	if [ "$invjobcompleted" == "done" ]
 	    then
+		#echo "invjob completed is done"
 		out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$invjob" $jail_back_loc/$inv)
-	elif [[ $invjobcompleted -eq "running" ]]
+	elif [ "$invjobcompleted" == "running" ]
 	    then
+		#echo "invjob if running"
 		while true
                     do
                         jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
@@ -73,6 +76,7 @@ if [[ (-z "$inv") ]]
                 done
 	elif [[ (-z "$invjobcompleted") ]]
 	    then
+		#echo "invjob completed empty"
 		invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
 	        #Watching for above job completion then continuing script
 	        while true
@@ -93,6 +97,8 @@ if [[ (-z "$inv") ]]
 	fi
 fi
 #This means the inventory is recent so it needs to continue the prune
+
+#echo "Starting Prune"
 
 #Generating a parsable list of all archives
 archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
@@ -120,4 +126,3 @@ for i in $archives
 		echo -n
 	fi
 done
-
