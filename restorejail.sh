@@ -90,7 +90,15 @@ else
 	    then
 		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
-		iocage create -r LATEST -n $newjailname ip4_addr=$newjailip boot=on vnet=on default_route=10.10.0.1
+		defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter default route IPv4" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		vnetyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Should the jail have vnet?" --yesno $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
+		if [[ $vnetyesno -eq 1 ]]
+			then
+				vnet="off"
+		else
+			vnet="on"
+		fi
+		iocage create -r LATEST -n $newjailname ip4_addr=$newjailip boot=on vnet=$vnet default_route=$defroute
 		#Getting new jail zfs path to destroy and replace with backup
 		newjailpath=$(jpath $newjailname)
 		zfs destroy $newjailpath
