@@ -105,6 +105,7 @@ archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDa
 
 #setting newline to for delimiter
 IFS=$'\n'
+count=0
 for i in $archives
     do
 	adate=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" $(echo $i | cut -f2) "+%m/%d")
@@ -118,7 +119,8 @@ for i in $archives
 		    then
 			#Here it is not the last day of the month and not within the 90 day period
 			jexec $backjid aws glacier delete-archive --account-id - --vault-name $vaultname --archive-id="$aid"
-			#echo $i
+			#Incrementing internal var so it can log amount deleted
+			count+=1			
 		else
 			echo -n
 		fi
@@ -126,3 +128,7 @@ for i in $archives
 		echo -n
 	fi
 done
+
+#Using echo from the cron as a way to send email alerts
+echo "Pruned $count from Glacier"
+exit 0
