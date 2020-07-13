@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Start of restore script that bases off of the backup logs to get archiveIds
+#Start of restore script that bases off of any inventory jobs saved to get Glacier IDs (was relying off of backup logs but those get cleared on system update)
 
 HEIGHT=15
 WIDTH=40
@@ -9,7 +9,14 @@ BACKTITLE="Restore Script"
 
 #Defining conf file and setting variables from it
 conf=/root/back.conf
-source $conf
+
+if [[ $(test -e $conf;echo $?) -ne 0 ]]
+    then
+	prinf "Configuration file does not exist!\nRun init script to create config file"
+	exit 1
+else
+	source $conf
+fi
 
 c=1
 curjaillist=$(jls | grep -v JID | awk '{print $2}')
@@ -28,17 +35,25 @@ RESTOREOPT=(	1 "Replace Jail"
 #relying on backup.log is not a good idea since it could get rolled over and thats just more work
 inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
 
-archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
-
 if [[ (-z $inv) ]]
     then
 	echo "Please run the prune script in a detached console to get a recent inventory job"
 	exit 1
 fi
 
+archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
+
 #Using recent inventory job to generate available jails
 jaillist=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveDescription" | cut -d/ -f4 | sort | uniq | grep -v "jails\|^@")
 
+c2=1
+jailarray=()
+for j in $jaillist
+    do
+	jailarray+=($c)2
+	jailarray+=(" $j ")
+	c2=$(($c2+1))
+done
 
 #Asking for what jail to restore
 jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to restore" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${jailarray[@]}" 2>&1 >/dev/tty)
