@@ -77,7 +77,7 @@ if [[ (-z "$inv") ]]
 	elif [[ (-z "$invjobcompleted") ]]
 	    then
 		#echo "invjob completed empty"
-		invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
+		invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .jobId)
 	        #Watching for above job completion then continuing script
 	        while true
 	            do
