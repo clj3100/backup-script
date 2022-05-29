@@ -33,7 +33,7 @@ inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
 
 if [[ (-z $inv) ]]
     then
-	dialog --clear --backtitle "$BACKTITLE" --title "Local restore" --infobox "There is no recent inventory job. Defaulting to local restore." $HEIGHT $WIDTH 2>&1 >/dev/tty
+	dialog --clear --backtitle "$BACKTITLE" --title "Local restore" --msgbox "There is no recent inventory job. Defaulting to local restore." $HEIGHT $WIDTH 2>&1 >/dev/tty
 	jaillist=$(ls $back_loc | grep gz | sed 's/\@.*//' |sort -u)
 	else
 	#Using inventory job to generate list of archives
@@ -48,10 +48,10 @@ if [[ $(zfs list -Ho name | grep -q tempmount ;echo $?) -eq 0 ]]
 		if [[ $tempyesno -eq 0 ]]
 			then
 				zfs destroy -r $(zfs list -Ho name | grep tempmount)
-				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --infobox "The temporary mount has been removed exiting script" $HEIGHT $WIDTH 2>&1 >/dev/tty
+				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --msgbox "The temporary mount has been removed exiting script" $HEIGHT $WIDTH 2>&1 >/dev/tty
 				exit 0
 		else 
-				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --infobox "The script cannot be ran with a temporary mount still attached" $HEIGHT $WIDTH 2>&1 >/dev/tty
+				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --msgbox "The script cannot be ran with a temporary mount still attached" $HEIGHT $WIDTH 2>&1 >/dev/tty
 				exit 1
 		fi
 fi
@@ -141,7 +141,7 @@ function restoreaction {
 
 if [[ $(test -e $back_loc/retrievaljob.txt ;echo $?) -eq 0 ]]
 	then
-	dialog --clear --backtitle "$BACKTITLE" --title "AWS Archive retrieval" --infobox "Detected inventory retrieval jobid so starting from that" $HEIGHT $WIDTH 2>&1 >/dev/tty
+	dialog --clear --backtitle "$BACKTITLE" --title "AWS Archive retrieval" --msgbox "Detected inventory retrieval jobid so starting from that" $HEIGHT $WIDTH 2>&1 >/dev/tty
 	jobid=$(echo $back_loc/retrievaljob.txt)
 	backjid=$(jid $backname)
 	jobcomplete=$(jexec $backjid aws glacier describe-job --account-id - --vault-name $vaultname --job-id="$jobid" |jq -r .Completed)
@@ -174,7 +174,7 @@ localchoice=1
 localpath=$(if [[ $(test -f $back_loc/$jail@$datechoice.gz ;echo $?) -eq 0 ]];then echo $back_loc/$jail@$datechoice.gz;else echo -n;fi)
 if [[ (-z "$localpath") ]]
 	then
-	dialog --clear --backtitle "$BACKTITLE" --title "Local option" --infobox "There is no local copy of the file" $HEIGHT $WIDTH 2>&1 >/dev/tty
+	dialog --clear --backtitle "$BACKTITLE" --title "Local option" --msgbox "There is no local copy of the file" $HEIGHT $WIDTH 2>&1 >/dev/tty
 else
 	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
 fi
@@ -184,7 +184,7 @@ if [[ $localchoice -eq 1 ]]
 	backjid=$(jid $backname)
 	startjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters "{\"Type\": \"archive-retrieval\", \"ArchiveId\":\"$archiveId\"}"| jq -r .jobId)
 	echo $startjob > $back_loc/retrievaljob.txt
-	dialog --clear --backtitle "$BACKTITLE" --title "Archive Retrieval" --infobox "The archive retrieval has started so re-run this script when notified of the job completion" $HEIGHT $WIDTH 2>&1 >/dev/tty
+	dialog --clear --backtitle "$BACKTITLE" --title "Archive Retrieval" --msgbox "The archive retrieval has started so re-run this script when notified of the job completion" $HEIGHT $WIDTH 2>&1 >/dev/tty
 	exit 0
 else
 	restoreaction $localpath
