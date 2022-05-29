@@ -57,7 +57,7 @@ zfs destroy $snapname
 filesize=$(stat -f %z $back_loc/$filename)
 
 #Generating treehash
-hash=$(jexec $(jid $back_jail) treehash "$jail_back_loc/$filename")
+hash=$(jexec $(jid $back_jail) treehash "$jail_back_loc/$filename"| cut -d" " -f2)
 
 echo $hash > $hash_loc/$jail@$(date +%Y%m%d).hash
 
