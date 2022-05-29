@@ -61,7 +61,13 @@ function restoreaction {
 	if [[ $restorechoice -eq 1 ]]
 		then
 		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
-
+		curjail=$(echo $curjaillist |cut -d " " -f$jailchoice)
+		iocage stop $curjail
+		zfs destroy $(jpath $curjail)
+		gzip -d -c $1 | zfs recv $(jpath $curjail)
+		iocage start $curjail
+		echo "Jail backup restored to $curjail location"
+		exit 0
 	elif [[ $restorechoice -eq 2 ]]
 		then
 		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
@@ -77,16 +83,32 @@ function restoreaction {
 		iocage create -r LATEST -n $newjailname ip4_addr=$newjailip boot=on vnet=$vnet default_route=$defroute
 		#Getting new jail zfs path to destroy and replace with backup
 		newjailpath=$(jpath $newjailname)
+		iocage stop $newjailname
 		zfs destroy $newjailpath
-		#Placeholder for the extracting of local jail backup from $localpath
-
+		gzip -d -c $1 | zfs recv $newjailpath
+		iocage start $newjailname
+		echo "Jail backup restored to $newjailname"
+		exit 0
 	elif [[ $restorechoice -eq 3 ]]
 		then
-		#Section for temporary mount jail 
-		#Placeholder for extracting to temp zfa location
-		echo "After restore section"
-		exit 0
-	fi
+		pc=1
+		poollist=$(zpool list -Ho name | grep -v boot)
+		if [[ (-z "$poollist") ]]
+			then
+				echo "There are no pools to mount to"
+				exit 1
+		fi
+		poolarray=()
+		for p in $poollist
+			do
+				poolarray+=($pc)
+				poolarray+=($p)
+				pc=$(($pc+1))
+		done
+		
+		poolselect=$(dialog --clear --backtitle "$BACKTITLE" --title "Select which pool to mount the backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${poolarray[@]}" 2>&1 >/dev/tty)
+		pool=$(echo $poollist | cut -d" " -f$poolselect)
+		fi
 }
 
 if [[ $(test -e $back_loc/retrievaljob.txt ;echo $?) -eq 0 ]]
