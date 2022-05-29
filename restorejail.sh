@@ -162,7 +162,7 @@ jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to res
 
 jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 
-datechoice=$(dialog --clear --cr-wrap --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore\nor use \"latest\"" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+datechoice=$(dialog --clear --cr-wrap --backtitle "$BACKTITLE" --title "Enter date to restore" --inputbox "example: 20190215 or \"latest\"" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 if [ "$datechoice" == "latest" ]
 	then
 		dateconvert=$(date -j -v-1d +%Y-%m-%d)
