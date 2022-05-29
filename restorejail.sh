@@ -80,7 +80,7 @@ function restoreaction {
 		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
 		curjail=$(echo $curjaillist |cut -d " " -f$jailchoice)
 		iocage stop $curjail
-		zfs destroy $(jpath $curjail)
+		zfs destroy -r $(jpath $curjail)
 		gzip -d -c $1 | pv | zfs recv $(jpath $curjail)
 		iocage start $curjail
 		echo "Jail backup restored to $curjail location"
@@ -101,7 +101,7 @@ function restoreaction {
 		#Getting new jail zfs path to destroy and replace with backup
 		newjailpath=$(jpath $newjailname)
 		iocage stop $newjailname
-		zfs destroy $newjailpath
+		zfs destroy -r $newjailpath
 		gzip -d -c $1 | pv | zfs recv $newjailpath
 		iocage start $newjailname
 		echo "Jail backup restored to $newjailname"
