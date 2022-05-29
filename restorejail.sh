@@ -3,7 +3,7 @@
 #Start of restore script that bases off of any inventory jobs saved to get Glacier IDs (was relying off of backup logs but those get cleared on system update)
 
 HEIGHT=15
-WIDTH=40
+WIDTH=50
 CHOICE_HEIGHT=10
 BACKTITLE="Restore Script"
 
@@ -162,7 +162,7 @@ jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to res
 
 jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 
-datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore or use \"latest\"" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore\nor use \"latest\"" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 if [ "$datechoice" == "latest" ]
 	then
 		dateconvert=$(date -j -v-1d +%Y-%m-%d)
