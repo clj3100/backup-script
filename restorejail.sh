@@ -122,7 +122,6 @@ function restoreaction {
 		if [[ $pc -eq 1 ]]
 			then
 			pool=$(echo $poollist|cut -d" " -f1)
-			zfs create $pool/tempmount
 			gzip -cd $1 |zfs recv $pool/tempmount@restore
 			restore_loc=$(zfs list -Ho mountpoint $pool/tempmount)
 			echo "Restored data temporarily mounted at $restore_loc Run script again once you would like to remove it"
@@ -130,7 +129,6 @@ function restoreaction {
 		else
 			poolselect=$(dialog --clear --backtitle "$BACKTITLE" --title "Select which pool to mount the backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${poolarray[@]}" 2>&1 >/dev/tty)
 			pool=$(echo $poollist | cut -d" " -f$poolselect)
-			zfs create $pool/tempmount
 			gzip -cd $1 |zfs recv $pool/tempmount@restore
 			restore_loc=$(zfs list -Ho mountpoint $pool/tempmount)
 			echo "Restored data temporarily mounted at $restore_loc Run script again once you would like to remove it"
