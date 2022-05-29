@@ -62,7 +62,7 @@ if [[ (-z "$inv") ]]
 		while true
                     do
                         jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
-                        status=$(echo "$jobs" | jq --arg id "$invjob" -r '.JobList|.[]|if .JobId=="$id" then .Completed else empty end')
+                        status=$(echo "$jobs" | jq --arg id "$invjob" -r '.JobList|.[]|if .JobId="$id" then .Completed else empty end')
                         if [ "$status" == "true" ]
                             then
                                 #echo JOB DONE
@@ -77,12 +77,12 @@ if [[ (-z "$inv") ]]
 	elif [[ (-z "$invjobcompleted") ]]
 	    then
 		#echo "invjob completed empty"
-		invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .JobId)
+		invjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}' | jq -r .jobId)
 	        #Watching for above job completion then continuing script
 	        while true
 	            do
 	                jobs=$(jexec $backjid aws glacier list-jobs --account-id - --vault-name $vaultname)
-	                status=$(echo "$jobs" | jq --arg id "$invjob" -r '.JobList|.[]|if .JobId=="$id" then .Completed else empty end')
+	                status=$(echo "$jobs" | jq --arg id "$invjob" -r '.JobList|.[]|if .JobId="$id" then .Completed else empty end')
 	                if [ "$status" == "true" ]
 	                    then
 	                        #echo JOB DONE
@@ -120,7 +120,7 @@ for i in $archives
 			#Here it is not the last day of the month and not within the 90 day period
 			jexec $backjid aws glacier delete-archive --account-id - --vault-name $vaultname --archive-id="$aid"
 			#Incrementing internal var so it can log amount deleted
-			count+=1			
+			count=$((count+1))
 		else
 			echo -n
 		fi
