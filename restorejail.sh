@@ -63,9 +63,9 @@ jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore or use \"latest\"" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 if [ "$datechoice" == "latest" ]
 	then
-		dateconvert=$(date +%Y%m%d)
+		dateconvert=$(date +%Y-%m-%d)
 else
-	dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%b %d")
+	dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%Y-%m-%d")
 fi
 echo $dateconvert
 localchoice=1
@@ -78,7 +78,7 @@ else
 fi
 if [[ $localchoice -eq 1 ]]
     then
-	archiveId=$(grep saved /var/log/backup.log | grep $jail | grep "$dateconvert" | cut -d" " -f13)
+	archiveId=$(cat $archives | grep $jail | grep "$dateconvert" | cut -f1)
 	if [[ (-z "$archiveid") ]]
 	    then
 		inventorychoice=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS Inventory Job" --defaultno --yesno "There is no backup with that date in logs. Would you like to run an AWS Inventory retrieval?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
