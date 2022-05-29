@@ -179,7 +179,7 @@ if [[ (-z "$localpath") ]]
 else
 	if [[ (-z $inv) ]]
 		then
-		echo -n ""
+		localchoice=0
 	else
 		localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
 	fi
