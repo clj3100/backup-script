@@ -81,7 +81,7 @@ function restoreaction {
 		curjail=$(echo $curjaillist |cut -d " " -f$jailchoice)
 		iocage stop $curjail
 		zfs destroy $(jpath $curjail)
-		gzip -d -c $1 | zfs recv $(jpath $curjail)
+		gzip -d -c $1 | pv | zfs recv $(jpath $curjail)
 		iocage start $curjail
 		echo "Jail backup restored to $curjail location"
 		exit 0
@@ -102,7 +102,7 @@ function restoreaction {
 		newjailpath=$(jpath $newjailname)
 		iocage stop $newjailname
 		zfs destroy $newjailpath
-		gzip -d -c $1 | zfs recv $newjailpath
+		gzip -d -c $1 | pv | zfs recv $newjailpath
 		iocage start $newjailname
 		echo "Jail backup restored to $newjailname"
 		exit 0
@@ -125,14 +125,14 @@ function restoreaction {
 		if [[ $pc -eq 1 ]]
 			then
 			pool=$(echo $poollist|cut -d" " -f1)
-			gzip -cd $1 |zfs recv $pool/tempmount@restore
+			gzip -cd $1 | pv | zfs recv $pool/tempmount@restore
 			restore_loc=$(zfs list -Ho mountpoint $pool/tempmount)
 			echo "Restored data temporarily mounted at $restore_loc Run script again once you would like to remove it"
 			exit 0
 		else
 			poolselect=$(dialog --clear --backtitle "$BACKTITLE" --title "Select which pool to mount the backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${poolarray[@]}" 2>&1 >/dev/tty)
 			pool=$(echo $poollist | cut -d" " -f$poolselect)
-			gzip -cd $1 |zfs recv $pool/tempmount@restore
+			gzip -cd $1 | pv | zfs recv $pool/tempmount@restore
 			restore_loc=$(zfs list -Ho mountpoint $pool/tempmount)
 			echo "Restored data temporarily mounted at $restore_loc Run script again once you would like to remove it"
 			exit 0
@@ -163,14 +163,17 @@ jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to res
 
 jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 
-datechoice=$(dialog --clear --cr-wrap --backtitle "$BACKTITLE" --title "Enter date to restore" --inputbox "example: 20190215 or \"latest\"" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date to restore" --inputbox "ex: 20190215 or last or locallist" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 if [ "$datechoice" == "latest" ]
 	then
 		dateconvert=$(date -j -v-1d +%Y-%m-%d)
+elif [ "$datechoice" == "locallist"]
+	then
+		
 else
 	dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%Y-%m-%d")
 fi
-echo $dateconvert
+# echo $dateconvert
 localchoice=1
 localpath=$(if [[ $(test -f $back_loc/$jail@$datechoice.gz ;echo $?) -eq 0 ]];then echo $back_loc/$jail@$datechoice.gz;else echo -n;fi)
 if [[ (-z "$localpath") ]]
