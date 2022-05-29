@@ -16,7 +16,7 @@ localetc=/usr/local/etc
 mkdir -p $localetc/git
 git clone https://github.com/clj3100/backup-script $localetc/git
 ln -s $localetc/git/backup-script/back.conf $localetc/back.conf
-for file in $(find $localetc/git/backup-script -name '*.sh')
+for file in $(find $localetc/git/backup-script -name '*.sh' | grep -v init.sh)
     do
 	name=$(echo $file|sed 's/.sh//')
 	ln -s $file /usr/local/sbin/$name
