@@ -33,14 +33,14 @@ inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
 
 if [[ (-z $inv) ]]
     then
-	echo "Please run the prune script in a detached console to get a recent inventory job"
-	exit 1
+	dialog --clear --backtitle "$BACKTITLE" --title "Local restore" --infobox "There is no recent inventory job. Defaulting to local restore." $HEIGHT $WIDTH 2>&1 >/dev/tty
+	jaillist=$(ls $back_loc | grep gz | sed 's/\@.*//' |sort -u)
+	else
+	#Using inventory job to generate list of archives
+	archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
+	#Using recent inventory job to generate available jails
+	jaillist=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveDescription" | cut -d/ -f4 | sort | uniq | grep -v "jails\|^@")
 fi
-
-archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDate,.ArchiveDescription" | paste - - -)
-
-#Using recent inventory job to generate available jails
-jaillist=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveDescription" | cut -d/ -f4 | sort | uniq | grep -v "jails\|^@")
 
 if [[ $(zfs list -Ho name | grep -q tempmount ;echo $?) -eq 0 ]]
 	then
