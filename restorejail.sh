@@ -42,6 +42,20 @@ archives=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveId,.CreationDa
 #Using recent inventory job to generate available jails
 jaillist=$(cat $back_loc/$inv | jq -r ".ArchiveList| .[]| .ArchiveDescription" | cut -d/ -f4 | sort | uniq | grep -v "jails\|^@")
 
+if [[ $(zfs list -Ho name | grep -q tempmount ;echo $?) -eq 0 ]]
+	then
+		tempyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Temp mount found. Do you want to remove it?" --yesno $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
+		if [[ $tempyesno -eq 0 ]]
+			then
+				zfs destroy -r $(zfs list -Ho name | grep tempmount)
+				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --infobox "The temporary mount has been removed exiting script" $HEIGHT $WIDTH 2>&1 >/dev/tty
+				exit 0
+		else 
+				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --infobox "The script cannot be ran with a temporary mount still attached" $HEIGHT $WIDTH 2>&1 >/dev/tty
+				exit 1
+		fi
+fi
+
 c2=1
 jailarray=()
 for j in $jaillist
@@ -105,10 +119,24 @@ function restoreaction {
 				poolarray+=($p)
 				pc=$(($pc+1))
 		done
-		
-		poolselect=$(dialog --clear --backtitle "$BACKTITLE" --title "Select which pool to mount the backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${poolarray[@]}" 2>&1 >/dev/tty)
-		pool=$(echo $poollist | cut -d" " -f$poolselect)
+		if [[ $pc -eq 1 ]]
+			then
+			pool=$(echo $poollist|cut -d" " -f1)
+			zfs create $pool/tempmount
+			gzip -cd $1 |zfs recv $pool/tempmount@restore
+			restore_loc=$(zfs list -Ho mountpoint $pool/tempmount)
+			echo "Restored data temporarily mounted at $restore_loc Run script again once you would like to remove it"
+			exit 0
+		else
+			poolselect=$(dialog --clear --backtitle "$BACKTITLE" --title "Select which pool to mount the backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${poolarray[@]}" 2>&1 >/dev/tty)
+			pool=$(echo $poollist | cut -d" " -f$poolselect)
+			zfs create $pool/tempmount
+			gzip -cd $1 |zfs recv $pool/tempmount@restore
+			restore_loc=$(zfs list -Ho mountpoint $pool/tempmount)
+			echo "Restored data temporarily mounted at $restore_loc Run script again once you would like to remove it"
+			exit 0
 		fi
+	fi
 }
 
 if [[ $(test -e $back_loc/retrievaljob.txt ;echo $?) -eq 0 ]]
