@@ -87,9 +87,9 @@ function restoreaction {
 		exit 0
 	elif [[ $restorechoice -eq 2 ]]
 		then
-		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
-		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
-		defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter default route IPv4" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name" --inputbox "" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr" --inputbox "" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter default route IPv4" --inputbox "" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		vnetyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Should the jail have vnet?" --yesno "" $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
 		if [[ $vnetyesno -eq 1 ]]
 			then
