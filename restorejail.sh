@@ -44,7 +44,7 @@ fi
 
 if [[ $(zfs list -Ho name | grep -q tempmount ;echo $?) -eq 0 ]]
 	then
-		tempyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Temp mount found. Do you want to remove it?" --yesno $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
+		tempyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Temp mount found" --yesno "Do you want to remove it?" $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
 		if [[ $tempyesno -eq 0 ]]
 			then
 				zfs destroy -r $(zfs list -Ho name | grep tempmount)
@@ -87,7 +87,7 @@ function restoreaction {
 		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter default route IPv4" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
-		vnetyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Should the jail have vnet?" --yesno $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
+		vnetyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Should the jail have vnet?" --yesno "" $HEIGHT $WIDTH 2>&1 >/dev/tty; echo $?)
 		if [[ $vnetyesno -eq 1 ]]
 			then
 				vnet="off"
