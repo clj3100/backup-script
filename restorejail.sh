@@ -27,10 +27,6 @@ for j in $curjaillist
 	c=$(($c+1))
 done
 
-RESTOREOPT=(	1 "Replace Jail"
-		2 "New Jail"
-		3 "Mount Temporarily")
-
 #Moving script to new inventory job availability checking
 #relying on backup.log is not a good idea since it could get rolled over and thats just more work
 inv=$(find $back_loc -name 'inv*.json' -mtime -30d |sed 's:.*/::')
@@ -55,54 +51,18 @@ for j in $jaillist
 	c2=$(($c2+1))
 done
 
-#Asking for what jail to restore
-jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to restore" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${jailarray[@]}" 2>&1 >/dev/tty)
+function restoreaction {
 
-jail=$(echo $jaillist | cut -d " " -f$jailchoice)
+	RESTOREOPT=(	1 "Replace Jail"
+		2 "New Jail"
+		3 "Mount Temporarily")
 
-datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore or use \"latest\"" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
-if [ "$datechoice" == "latest" ]
-	then
-		dateconvert=$(date +%Y-%m-%d)
-else
-	dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%Y-%m-%d")
-fi
-echo $dateconvert
-localchoice=1
-localpath=$(if [[ $(test -f $back_loc/$jail@$datechoice.gz ;echo $?) -eq 0 ]];then echo $back_loc/$jail@$datechoice.gz;else echo -n;fi)
-if [[ (-z "$localpath") ]]
-    then
-	dialog --clear --backtitle "$BACKTITLE" --title "Local option" --infobox "There is no local copy of the file" $HEIGHT $WIDTH 2>&1 >/dev/tty
-else
-	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
-fi
-if [[ $localchoice -eq 1 ]]
-    then
-	archiveId=$(cat $archives | grep $jail | grep "$dateconvert" | cut -f1)
-	if [[ (-z "$archiveid") ]]
-	    then
-		inventorychoice=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS Inventory Job" --defaultno --yesno "There is no backup with that date in logs. Would you like to run an AWS Inventory retrieval?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
-		if [[ $inventorychoice -eq 0 ]]
-		    then
-			startjob=$(jexec $(jid $back_jail) aws glacier initiate-job --account-id --vault-name $vaultname --job-parameters '{"Type": "inventory-retrieval"}')
-			jobId=$(echo $startjob | jq -r .jobId)
-			echo "$jobId" > $back_loc/inventoryjob.txt
-		else
-			echo "If you dont pick an option then there is no use for the script"
-			exit 1
-		fi
-	else
-		echo $archiveId
-		exit 0
-	fi
-	
-else
 	restorechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select how to restore jail" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${RESTOREOPT[@]}" 2>&1 >/dev/tty)
 	if [[ $restorechoice -eq 1 ]]
-	    then
+		then
 		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
 	elif [[ $restorechoice -eq 2 ]]
-	    then
+		then
 		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		newjailip=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail IP addr:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter default route IPv4" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
@@ -120,10 +80,60 @@ else
 		#Placeholder for the extracting of local jail backup from $localpath
 
 	elif [[ $restorechoice -eq 3 ]]
-	    then
+		then
 		#Section for temporary mount jail 
 		#Placeholder for extracting to temp zfa location
 		echo "After restore section"
 		exit 0
 	fi
+}
+
+if [[ $(test -e $back_loc/retrievaljob.txt ;echo $?) -eq 0 ]]
+	then
+	dialog --clear --backtitle "$BACKTITLE" --title "AWS Archive retrieval" --infobox "Detected inventory retrieval jobid so starting from that" $HEIGHT $WIDTH 2>&1 >/dev/tty
+	jobid=$(echo $back_loc/retrievaljob.txt)
+	backjid=$(jid $backname)
+	jobcomplete=$(jexec $backjid aws glacier describe-job --account-id - --vault-name $vaultname --job-id="$jobid" |jq -r .Completed)
+	if [ $jobcomplete == "false" ]
+		then
+			echo "Inventory job not complete. Re-run when it is complete"
+			exit 1
+	elif [ $jobcomplete == "true" ]
+		then
+			out=$(jexec $backjid aws glacier get-job-output --account-id - --vault-name $vaultname --job-id="$jobid" $back_loc/AWSjobout.gz)
+			restoreaction $back_loc/AWSjobout.gz
+			exit 0
+	fi		
 fi
+
+#Asking for what jail to restore
+jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to restore" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${jailarray[@]}" 2>&1 >/dev/tty)
+
+jail=$(echo $jaillist | cut -d " " -f$jailchoice)
+
+datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date for jail backup to restore or use \"latest\"" --inputbox "example: 20190215" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+if [ "$datechoice" == "latest" ]
+	then
+		dateconvert=$(date -j -v-1d +%Y-%m-%d)
+else
+	dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%Y-%m-%d")
+fi
+echo $dateconvert
+localchoice=1
+localpath=$(if [[ $(test -f $back_loc/$jail@$datechoice.gz ;echo $?) -eq 0 ]];then echo $back_loc/$jail@$datechoice.gz;else echo -n;fi)
+if [[ (-z "$localpath") ]]
+	then
+	dialog --clear --backtitle "$BACKTITLE" --title "Local option" --infobox "There is no local copy of the file" $HEIGHT $WIDTH 2>&1 >/dev/tty
+else
+	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
+fi
+if [[ $localchoice -eq 1 ]]
+	then
+	archiveId=$(cat $archives | grep $jail | grep "$dateconvert" | cut -f1)
+	backjid=$(jid $backname)
+	startjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters "{\"Type\": \"archive-retrieval\", \"ArchiveId\":\"$archiveId\"}"| jq -r .jobId)
+	echo $startjob > $back_loc/retrievaljob.txt
+	dialog --clear --backtitle "$BACKTITLE" --title "Archive Retrieval" --infobox "The archive retrieval has started so re-run this script when notified of the job completion" $HEIGHT $WIDTH 2>&1 >/dev/tty
+	exit 0
+fi
+	
