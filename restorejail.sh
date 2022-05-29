@@ -178,7 +178,8 @@ elif [ "$datechoice" == "list" ]
 				datearray+=( $date )
 				datec=$(($datec+1))
 		done
-		datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select date from local" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${datearray[@]}" 2>&1 >/dev/tty)
+		datechoicelist=$(dialog --clear --backtitle "$BACKTITLE" --title "Select date from local" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${datearray[@]}" 2>&1 >/dev/tty)
+		datechoice=$(echo $datelist | cut -d " " -f$datechoicelist)
 else
 	dateconvert=$(date -j -f "%Y%m%d" $datechoice "+%Y-%m-%d")
 fi
