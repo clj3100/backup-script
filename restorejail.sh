@@ -49,7 +49,7 @@ if [[ $(zfs list -Ho name | grep -q tempmount ;echo $?) -eq 0 ]]
 			then
 				zfs destroy -r $(zfs list -Ho name | grep tempmount)
 				continueyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --yesno "The temporary mount has been removed. Continue script?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
-				if [[ $continueyesno -eq 1]]
+				if [[ $continueyesno -eq 1 ]]
 					then
 						exit 0
 				fi
