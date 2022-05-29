@@ -46,7 +46,7 @@ c2=1
 jailarray=()
 for j in $jaillist
     do
-	jailarray+=($c)2
+	jailarray+=($c2)
 	jailarray+=(" $j ")
 	c2=$(($c2+1))
 done
@@ -61,6 +61,7 @@ function restoreaction {
 	if [[ $restorechoice -eq 1 ]]
 		then
 		jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to replace with $jail backup" --menu "Select:" $HEIGHT $WIDTH $CHOICE_HEIGHT "${curjailarray[@]}" 2>&1 >/dev/tty)
+
 	elif [[ $restorechoice -eq 2 ]]
 		then
 		newjailname=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter new jail name:" --inputbox $HEIGHT $WIDTH 2>&1 >/dev/tty)
@@ -134,6 +135,9 @@ if [[ $localchoice -eq 1 ]]
 	startjob=$(jexec $backjid aws glacier initiate-job --account-id - --vault-name $vaultname --job-parameters "{\"Type\": \"archive-retrieval\", \"ArchiveId\":\"$archiveId\"}"| jq -r .jobId)
 	echo $startjob > $back_loc/retrievaljob.txt
 	dialog --clear --backtitle "$BACKTITLE" --title "Archive Retrieval" --infobox "The archive retrieval has started so re-run this script when notified of the job completion" $HEIGHT $WIDTH 2>&1 >/dev/tty
+	exit 0
+else
+	restoreaction $localpath
 	exit 0
 fi
 	
