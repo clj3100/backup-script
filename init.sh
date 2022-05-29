@@ -33,15 +33,17 @@ createbackjail=$(dialog --clear --backtitle "$BACKTITLE" --title "Create backup 
 
 if [[ $createbackjail -eq 0 ]]
     then
+	backname=$(dialog --clear --backtitle "$BACKTITLE" --title "Name for backup jail" --inputbox "What name for the backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 	ip=$(dialog --clear --backtitle "$BACKTITLE" --title "IP for backup jail" --inputbox "What IP address for backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 	defroute=$(dialog --clear --backtitle "$BACKTITLE" --title "Default route for backup jail" --inputbox "What is the defalt route for the backup jail?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 	if [[ $checkiocage -eq 0 ]]
 	    then
-		iocage create -r LATEST -n Backup ip4_addr=$ip boot=on vnet=on defaultrouter=$defroute
-		backjid=$(jid Backup)
+		iocage create -r LATEST -n $backname ip4_addr=$ip boot=on vnet=on defaultrouter=$defroute
+		sed -e "s/^back_jail=.*/back_jail=$name" -i $localetc/back.conf
+		backjid=$(jid $backname)
 		#Installing nessecary packages in the jail
-		jexec $backjid setenv ASSUME_ALWAYS_YES yes ; pkg ; pkg install awscli ruby25-gems
-		jexec $backjid gem install treehash
+		jexec $backjid setenv ASSUME_ALWAYS_YES yes ; pkg ; pkg install awscli py38-pip
+		jexec $backjid pip install TreeHash
 		awsid=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS CLI config" --inputbox "Enter your aws access key" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 		awssecret=$(dialog --clear --backtitle "$BACKTITLE" --title "AWS CLI config" --inputbox "Enter your aws secret access key" $HEIGHT $IWDTH 2>&1 >/dev/tty)
 		regionarray=()
@@ -57,10 +59,12 @@ if [[ $createbackjail -eq 0 ]]
 		region=$(($regionchoice*2-1))
 		jexec $backjid mkdir /root/.aws ;printf "[default]\naws_access_key_id = $awsid\naws_secret_access_key = $awssecret" >/root/.aws/credentials
 		jexec $backjid printf "[default]\nregion = $region" > /root/.aws/config
+		jexec $backjid mkdir /backup
 	elif [[ $checkwarden -eq 0 ]]
 	    then
 		#Need to create the warden jail creation section
-		echo -n
+		echo "There is no iocage installed. This backup script only supports iocage"
+		exit 1 
 	fi
 else
 	dialog --clear --backtitle "$BACKTITLE" --title "Info for backup jail" --infobox "The backup jail needs to have awscll installed as well as the treehash command for hash generation" $HEIGHT $WIDTH 2>&1 >/dev/tty
