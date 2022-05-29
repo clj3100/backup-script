@@ -60,6 +60,9 @@ if [[ $createbackjail -eq 0 ]]
 		jexec $backjid mkdir /root/.aws ;printf "[default]\naws_access_key_id = $awsid\naws_secret_access_key = $awssecret" >/root/.aws/credentials
 		jexec $backjid printf "[default]\nregion = $region" > /root/.aws/config
 		jexec $backjid mkdir /backup
+		vaultname=$(dialog --clear --backtitle "$BACKTITLE" --title "S3 Glacier vault name" --inputbox "What is the name of the Glacier vault? (If it does not exist this script will create it)" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+		jexec $backjid aws glacier create-vault --account-id - --vault-name $vaultname
+		sed -e "s/^vaultname=.*/vaultname=\"$vaultname\"" -i $localetc/back.conf
 	elif [[ $checkwarden -eq 0 ]]
 	    then
 		#Need to create the warden jail creation section
