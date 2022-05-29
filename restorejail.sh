@@ -48,8 +48,11 @@ if [[ $(zfs list -Ho name | grep -q tempmount ;echo $?) -eq 0 ]]
 		if [[ $tempyesno -eq 0 ]]
 			then
 				zfs destroy -r $(zfs list -Ho name | grep tempmount)
-				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --msgbox "The temporary mount has been removed exiting script" $HEIGHT $WIDTH 2>&1 >/dev/tty
-				exit 0
+				continueyesno=$(dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --yesno "The temporary mount has been removed. Continue script?" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+				if [[ $continueyesno -eq 1]]
+					then
+						exit 0
+				fi
 		else 
 				dialog --clear --backtitle "$BACKTITLE" --title "Temp mount" --msgbox "The script cannot be ran with a temporary mount still attached" $HEIGHT $WIDTH 2>&1 >/dev/tty
 				exit 1
