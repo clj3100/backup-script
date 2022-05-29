@@ -177,7 +177,12 @@ if [[ (-z "$localpath") ]]
 	then
 	dialog --clear --backtitle "$BACKTITLE" --title "Local option" --msgbox "There is no local copy of the file" $HEIGHT $WIDTH 2>&1 >/dev/tty
 else
-	localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
+	if [[ (-z $inv) ]]
+		then
+		echo -n ""
+	else
+		localchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Local restore choice" --yesno "There is a local copy, would you like to use that?" $HEIGHT $WIDTH 2>&1 >/dev/tty ;echo $?)
+	fi
 fi
 if [[ $localchoice -eq 1 ]]
 	then
