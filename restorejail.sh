@@ -97,7 +97,7 @@ function restoreaction {
 		else
 			vnet="on"
 		fi
-		iocage create -r LATEST -n $newjailname ip4_addr=$newjailip boot=on vnet=$vnet default_route=$defroute
+		iocage create -r $(freebsd-version | cut -d- -f1,2) -n $newjailname ip4_addr=$newjailip boot=on vnet=$vnet default_route=$defroute
 		#Getting new jail zfs path to destroy and replace with backup
 		newjailpath=$(jpath $newjailname)
 		iocage stop $newjailname
