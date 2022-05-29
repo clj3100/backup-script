@@ -8,7 +8,7 @@ CHOICE_HEIGHT=10
 BACKTITLE="Restore Script"
 
 #Defining conf file and setting variables from it
-conf=/root/back.conf
+conf=/usr/local/etc/backup-script/back.conf
 
 if [[ $(test -e $conf;echo $?) -ne 0 ]]
     then
