@@ -163,11 +163,11 @@ jailchoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Select Jail to res
 
 jail=$(echo $jaillist | cut -d " " -f$jailchoice)
 
-datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date to restore" --inputbox "ex: 20190215 or last or locallist" $HEIGHT $WIDTH 2>&1 >/dev/tty)
+datechoice=$(dialog --clear --backtitle "$BACKTITLE" --title "Enter date to restore" --inputbox "ex: 20190215 or last or list" $HEIGHT $WIDTH 2>&1 >/dev/tty)
 if [ "$datechoice" == "last" ]
 	then
 		dateconvert=$(date -j -v-1d +%Y-%m-%d)
-elif [ "$datechoice" == "list"]
+elif [ "$datechoice" == "list" ]
 	then
 		datec=1
 		datearray=()
