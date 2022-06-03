@@ -9,4 +9,4 @@ All configuration is in the back.conf file
 
 It can be setup and installed using the init.sh script which will setup the jail and download the rest of the scripts
 
-`wget https://raw.githubusercontent.com/clj3100/backup-script/master/init.sh | bash`
+`curl https://raw.githubusercontent.com/clj3100/backup-script/master/init.sh | bash`
