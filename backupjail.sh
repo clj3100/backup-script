@@ -5,7 +5,7 @@ conf=/usr/local/etc/backup-script/back.conf
 
 if [[ $(test -e $conf;echo $?) -ne 0 ]]
     then
-	prinf "Configuration file does not exist!\nRun init script to create config file"
+	printf "Configuration file does not exist!\nRun init script to create config file"
 	exit 1
 else
 	source $conf
