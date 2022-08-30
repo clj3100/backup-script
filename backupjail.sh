@@ -59,7 +59,8 @@ filesize=$(stat -f %z $back_loc/$filename)
 #Generating treehash
 hash=$(jexec $(jid $back_jail) treehash "$jail_back_loc/$filename"| cut -d" " -f2)
 
-echo $hash > $hash_loc/$jail@$(date +%Y%m%d).hash
+#Hash saving not needed as AWS stores proper hash in inventory
+#echo $hash > $hash_loc/$jail@$(date +%Y%m%d).hash
 
 i=0
 if [[ $filesize -gt 3500000000 ]]
