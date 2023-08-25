@@ -171,7 +171,7 @@ elif [ "$datechoice" == "list" ]
 	then
 		datec=1
 		datearray=()
-		datelist=$(ls $back_loc/*.gz | grep $jail | sed 's/.*\@//' | sed 's/.gz//')
+		datelist=$(ls $back_loc/*.gz | grep '$jail@' | sed 's/.*\@//' | sed 's/.gz//')
 		for date in $datelist
 			do
 				datearray+=($datec)
